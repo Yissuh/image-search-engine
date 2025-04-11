@@ -1,0 +1,17 @@
+/.DS_Store
+/.venv
+/clip_indexer.py
+/clip_searcher.py
+/siglip2b-16-26.index
+/siglip2b-16-26.pkl
+/siglip2b32.index
+/siglip2b32.pkl
+/siglip2l16.index
+/siglip2l16.pkl
+/siglip2so400m.index
+/siglip2so400m.pkl
+/siglip_indexer.py
+/vitb32.index
+/vitb32.pkl
+/vitl14.index
+/vitl14.pkl
