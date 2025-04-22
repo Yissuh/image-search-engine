@@ -1,7 +1,9 @@
 import cv2
 from image_searcher import ImageSearcher
+import time
 
 def main():
+    start_time = time.time()
     # Initialize the searcher
     searcher = ImageSearcher(
         index_path="models/siglip2b-16-256-rotated.index", 
@@ -9,8 +11,8 @@ def main():
     )
     
     # Load an example frame with OpenCV
-    frame = cv2.imread("images/choco_knots_cart.jpg")
-    
+    frame = cv2.imread("images/pretzel_rotated.jpg")
+    frame = cv2.resize(frame, (256, 256))
     if frame is not None:
         # Perform the search using the frame
         results = searcher.search(frame, top_k=5)
@@ -20,6 +22,8 @@ def main():
             print(f"{i}. {path} (Score: {score})")
     else:
         print("Error loading image")
+
+    print(f"Search completed in {time.time() - start_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
