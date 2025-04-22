@@ -1,10 +1,9 @@
 import requests
 import time
-import json
 import io
-import re
 import numpy as np
 from PIL import Image
+import cv2
 
 class RotatedImageSearchFrameClient:
     def __init__(self, api_url="http://localhost:8000"):
@@ -27,7 +26,7 @@ class RotatedImageSearchFrameClient:
         except Exception as e:
             return {"status": "error", "message": str(e)}
     
-    def search_frame(self, frame, top_k=5, format="JPEG", quality=95):
+    def search_frame(self, frame, top_k=1, format="JPEG", quality=95):
         """
         Search for similar rotated images using a frame/numpy array
         
@@ -102,49 +101,84 @@ class RotatedImageSearchFrameClient:
         return product_name, barcode
 
 
-# Example usage
-if __name__ == "__main__":
+def search_product_from_frame(frame=None, resize_dim=(256, 256), api_url="http://localhost:8000", top_k=1):
+    """
+    Function to search for a product using an image frame
+    
+    Parameters:
+    - frame: Numpy array of the image 
+    - resize_dim: Dimensions to resize the image to (width, height)
+    - api_url: URL of the search API
+    - top_k: Number of top results to return
+    
+    Returns:
+    - Product information if found, None otherwise
+    """
     # Initialize the client
-    client = RotatedImageSearchFrameClient()
+    search_client = RotatedImageSearchFrameClient(api_url=api_url)
     
     # Check API health
-    health = client.health_check()
+    health = search_client.health_check()
     print(f"API Health: {health}")
+
     
-    # Example with a frame from OpenCV or numpy array
-    import cv2
+    if frame is None:
+        raise ValueError("No frame found")
     
-    # Load an image as a frame
-    frame = cv2.imread("images/ramen_rotated.jpg")
-    frame = cv2.resize(frame, (256, 256))  # Resize if needed
+    # Resize the frame if dimensions are provided
+    if resize_dim:
+        frame = cv2.resize(frame, resize_dim)
     
     # Search for similar images
     try:
-        results = client.search_frame(frame, top_k=5)
+        results = search_client.search_frame(frame, top_k=top_k)
         
-        if results:
+        if results and results.get("results") and len(results["results"]) > 0:
             # Print results
             print(f"\nFound {len(results['results'])} similar images in {results['query_time']:.3f}s:")
-            for i, item in enumerate(results['results']):
+            
+            product_matches = []
+            for i, item in enumerate(results["results"]):
                 # Extract product name and barcode
-                product_name, barcode = client.extract_product_info(item["product"])
+                product_name, barcode = search_client.extract_product_info(item["product"])
                 
-                # Now you have these variables to use
+                # Create a match object
+                match = {
+                    "product_name": product_name,
+                    "barcode": barcode,
+                    "rotation": item['rotation'],
+                    "similarity": item['similarity'],
+                    "path": item['path']
+                }
+                
+                product_matches.append(match)
+                
+                # Print information
                 print(f"{i+1}. Product Name: {product_name}")
                 print(f"   Barcode: {barcode}")
                 print(f"   Rotation: {item['rotation']}")
                 print(f"   Similarity: {item['similarity']:.4f}")
                 print(f"   Path: {item['path']}")
-                
-                # Example of using these variables
-                matched_product = {
-                    "product_name": product_name,
-                    "barcode": barcode,
-                    "rotation": item['rotation']
-                }
-                
-                # Now you can use result_info dictionary for further processing
-                print(f"\nProduct matched: {matched_product}")
-
+            
+            return product_name, barcode
+        else:
+            print("No matching products found")
+            return None
+            
     except Exception as e:
         print(f"Error searching image: {e}")
+        return None
+
+
+# Example usage
+if __name__ == "__main__":
+    # Call the function with an image path
+    frame = cv2.imread("images/ramen_rotated.jpg")
+    if frame is None:
+        print("Error loading image")
+    
+    product_name, barcode = search_product_from_frame(frame=frame, resize_dim=(256, 256), api_url="http://localhost:8000", top_k=1)
+    
+    if [product_name, barcode]:
+        print(f"\nProduct: {product_name}")
+        print(f"Barcode: {barcode}")

@@ -68,7 +68,7 @@ class ImageSearcher:
         # Normalize the embedding (to unit length) for cosine similarity
         return F.normalize(image_embeds.squeeze(), p=2, dim=-1).cpu().numpy().astype("float32")
     
-    def search(self, frame, top_k=5):
+    def search(self, frame, top_k=3):
         # Compute the query embedding from frame
         query_embedding = self.compute_query_embedding_from_frame(frame)
         
@@ -123,7 +123,7 @@ async def root():
     return {"message": "SigLIP Rotated Image Search API", "status": "running"}
 
 @app.post("/search", response_model=SearchResponse)
-async def search_image(file: UploadFile = File(...), top_k: int = 5):
+async def search_image(file: UploadFile = File(...), top_k: int = 3):
     """
     Upload an image and find similar rotated images from the index
     
@@ -172,7 +172,7 @@ async def health_check():
 
 def main():
     """Run the FastAPI application with Uvicorn"""
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("image_searcher_api:app", host="0.0.0.0", port=8000, reload=False)
 
 if __name__ == "__main__":
     main()
