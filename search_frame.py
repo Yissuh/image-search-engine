@@ -7,12 +7,14 @@ def main():
     # Initialize the searcher
     searcher = ImageSearcher(
         index_path="models/siglip2b-16-256-rotated.index", 
-        meta_path="models/siglip2b-16-256-rotated-metadata.pkl"
+        meta_path="models/siglip2b-16-256-rotated-metadata.pkl",
+        model_name="google/siglip2-base-patch16-256"
     )
     
     # Load an example frame with OpenCV
-    frame = cv2.imread("images/pretzel_rotated.jpg")
-    frame = cv2.resize(frame, (256, 256))
+    
+    frame = cv2.imread("images/555 Tuna_Caldereta.png")
+    frame = cv2.resize(frame, (256, 256))  # resize depending on the model
     if frame is not None:
         # Perform the search using the frame
         results = searcher.search(frame, top_k=5)

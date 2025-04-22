@@ -23,10 +23,12 @@ class ImageSearcher:
     
     def compute_query_embedding_from_frame(self, frame):
         # Process the image directly from cv2 frame
+        frame = cv2.resize(frame, (256, 256))  # resize depending on the model
         # OpenCV uses BGR, but most models expect RGB, so we need to convert
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # Process the frame directly with the processor
+        
         inputs = self.processor(images=rgb_frame, return_tensors="pt").to(self.device)
         
         # Extract image features (embedding) from the model
