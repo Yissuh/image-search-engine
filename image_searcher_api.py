@@ -13,6 +13,7 @@ import uvicorn
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional, Union
 import time
+import os
 
 class ImageMetadata(BaseModel):
     path: str
@@ -24,33 +25,45 @@ class SearchResult(BaseModel):
     product: str
     rotation: str
     similarity: float
+    barcode: Optional[str]
+    flavor: Optional[str]
 
 class SearchResponse(BaseModel):
     results: List[SearchResult]
     query_time: float
 
 class ImageSearcher:
-    def __init__(self, index_path="models/siglip2b-16-256-rotated.index", meta_path="models/siglip2b-16-256-rotated-metadata.pkl", model_name="google/siglip2-base-patch16-256", device=None):
+    def __init__(self, index_path="./models/siglip2b-16-256-flavor.index",
+                 meta_path="./models/siglip2b-16-256-flavor.pkl",
+                 model_name="google/siglip2-base-patch16-256",
+                 device=None):
         self.index_path = index_path
         self.meta_path = meta_path
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        
+
         print(f"Loading model on device: {self.device}")
-        # Load the SigLIP model and processor
-        self.processor = SiglipProcessor.from_pretrained(model_name)
-        self.model = SiglipModel.from_pretrained(model_name).to(self.device)
-        
-        # Load the FAISS index and metadata
-        print(f"Loading FAISS index from {index_path}")
-        self.index = faiss.read_index(self.index_path)
-        
-        print(f"Loading metadata from {meta_path}")
-        with open(self.meta_path, "rb") as f:
-            self.metadata = pickle.load(f)
-        
-        print(f"Loaded metadata with {len(self.metadata)} entries")
-        if len(self.metadata) > 0:
-            print(f"Sample metadata entry: {self.metadata[0]}")
+        try:
+            # Load the SigLIP model and processor
+            print(f"Loading model: {model_name}")
+            self.processor = SiglipProcessor.from_pretrained(model_name, trust_remote_code=True)
+            self.model = SiglipModel.from_pretrained(model_name, trust_remote_code=True).to(self.device)
+
+            # Load the FAISS index and metadata
+            print(f"Loading FAISS index from {index_path}")
+            self.index = faiss.read_index(self.index_path)
+
+            print(f"Loading metadata from {meta_path}")
+            with open(self.meta_path, "rb") as f:
+                self.metadata = pickle.load(f)
+
+            print(f"Loaded metadata with {len(self.metadata)} entries")
+            if len(self.metadata) > 0:
+                print(f"Sample metadata entry: {self.metadata[0]}")
+        except Exception as e:
+            print(f"Detailed initialization error: {str(e)}")
+            import traceback
+            print(traceback.format_exc())
+            raise
     
     def compute_query_embedding_from_frame(self, frame):
         # Process the image directly from cv2 frame
@@ -85,12 +98,24 @@ class ImageSearcher:
                     "path": meta_entry["path"],
                     "product": meta_entry["product"],
                     "rotation": meta_entry["rotation"],
-                    "similarity": float(dist)
+                    "similarity": float(dist),
+                    "barcode": meta_entry.get("barcode"),  # add this line
+                    "flavor": meta_entry.get("flavor")  # add this line
                 }
                 results.append(result)
+
+
             else:
                 print(f"Warning: Index {idx} out of bounds for metadata of length {len(self.metadata)}")
-        
+
+        #debugging frame processed
+        # Create the folder if it doesn't exist
+        os.makedirs("best_images", exist_ok=True)
+
+        # Save the frame with a timestamp
+        timestamp = int(time.time())
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        cv2.imwrite(f"best_images/frame_{timestamp}.jpg", rgb_frame)
         return results
 
 
@@ -130,7 +155,7 @@ async def search_image(file: UploadFile = File(...), top_k: int = 3):
     Parameters:
     - file: The image file to search for similar images
     - top_k: Number of similar images to return (default: 5)
-    
+
     Returns:
     - List of similar images with their paths, products, rotation angles, and similarity scores
     """
@@ -172,7 +197,8 @@ async def health_check():
 
 def main():
     """Run the FastAPI application with Uvicorn"""
-    uvicorn.run("image_searcher_api:app", host="0.0.0.0", port=8000, reload=False)
+
+    uvicorn.run("image_searcher_api:app", host="192.168.1.50", port=8000, reload=False)
 
 if __name__ == "__main__":
     main()

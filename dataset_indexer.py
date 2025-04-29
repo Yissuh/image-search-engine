@@ -9,8 +9,8 @@ import torch.nn.functional as F  # For normalization
 import time
 
 class RotatedImageIndexer:
-    def __init__(self, dataset_dir, index_path="siglip2b-16-256-rotated.index", 
-                 meta_path="siglip2b-16-256-rotated-metadata.pkl", device=None):
+    def __init__(self, dataset_dir, index_path="siglip2b-16-256-flavor.index",
+                 meta_path="siglip2b-16-256-flavor.pkl", device=None):
         self.dataset_dir = dataset_dir
         self.index_path = index_path
         self.meta_path = meta_path
@@ -56,6 +56,29 @@ class RotatedImageIndexer:
             print(f"Error processing {image_path}: {e}")
             return None
 
+    @staticmethod
+    def extract_product_info(product_name):
+        """
+        Extracts product name, flavor, and barcode from the folder name.
+        Expected format: 'ProductName_Flavor_Barcode'
+        """
+        try:
+            parts = product_name.rsplit('_', 2)
+            if len(parts) == 3:
+                product = parts[0]
+                flavor = parts[1]
+                barcode = parts[2]
+            else:
+                product = product_name
+                flavor = "Unknown"
+                barcode = "Unknown"
+        except Exception as e:
+            print(f"Error parsing product name '{product_name}': {e}")
+            product = product_name
+            flavor = "Unknown"
+            barcode = "Unknown"
+
+        return product, flavor, barcode
     def index_images(self):
         """Index all rotated images in the dataset"""
         rotated_image_paths = self.get_rotated_image_paths()
@@ -72,22 +95,25 @@ class RotatedImageIndexer:
                     angle_part = parts[1].split(".")[0].split("_")[0]
                     if angle_part.isdigit():
                         rotation = f"{angle_part}°"
-            
+
             # Compute embedding
             embedding = self.compute_embedding(path)
             if embedding is not None:
-                # Normalize embeddings to unit length (cosine similarity)
+                # Normalize embedding to unit length
                 embedding = F.normalize(torch.tensor(embedding), p=2, dim=-1).numpy()
                 self.embeddings.append(embedding)
-                
-                # Store metadata (path, product name, rotation angle)
+
+                product, flavor, barcode = self.extract_product_info(product_name)
+
+                # Then store all of them in metadata:
                 self.metadata.append({
                     "path": path,
-                    "product": product_name,
-                    "rotation": rotation
+                    "product": product,
+                    "rotation": rotation,
+                    "flavor": flavor,
+                    "barcode": barcode
                 })
-                
-                # Print progress
+
                 if len(self.embeddings) % 50 == 0:
                     print(f"Processed {len(self.embeddings)} images...")
 
@@ -114,9 +140,9 @@ class RotatedImageIndexer:
 
         print(f"Successfully indexed {len(self.metadata)} rotated images.")
 
-# # ---- Run the indexer ----
-# if __name__ == "__main__":
-#     start_time = time.time()
-#     indexer = RotatedImageIndexer(dataset_dir="./dataset")  # Update to your dataset directory
-#     indexer.index_images()
-#     print(f"Indexing completed in {time.time() - start_time:.2f} seconds.")
+# ---- Run the indexer ----
+if __name__ == "__main__":
+    start_time = time.time()
+    indexer = RotatedImageIndexer(dataset_dir="./dataset")  # Update to your dataset directory
+    indexer.index_images()
+    print(f"Indexing completed in {time.time() - start_time:.2f} seconds.")
