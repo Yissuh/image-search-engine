@@ -1,0 +1,10 @@
+opencv-python>=4.9.0
+rembg==2.0.61
+Pillow>=10.3.0
+torch>=2.0.0
+transformers>=4.30.0
+faiss-cpu>=1.7.4
+numpy>=1.24.0
+PyQt6>=6.6.0
+# onnxruntime is only needed if you use ONNX models elsewhere
+onnxruntime>=1.15.0
