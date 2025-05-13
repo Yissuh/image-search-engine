@@ -15,6 +15,8 @@ from typing import List, Dict, Any, Optional, Union
 import time
 import os
 
+HOST="192.168.3.8"
+
 class ImageMetadata(BaseModel):
     path: str
     product: str
@@ -198,7 +200,7 @@ async def health_check():
 def main():
     """Run the FastAPI application with Uvicorn"""
 
-    uvicorn.run("image_searcher_api:app", host="192.168.1.50", port=8000, reload=False)
+    uvicorn.run("image_searcher_api:app", host=HOST, port=8000, reload=False)
 
 if __name__ == "__main__":
     main()
