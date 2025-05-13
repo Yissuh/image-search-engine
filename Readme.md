@@ -1,6 +1,6 @@
 # Product Image Search Application
 
-A comprehensive application for capturing product images, removing backgrounds, generating rotated variants, and indexing them for fast similarity search using Google's SigLIP model and FAISS.
+An application for capturing product images, removing backgrounds, generating rotated variants, and indexing them for fast similarity search using Google's SigLIP model and FAISS.
 
 ---
 
