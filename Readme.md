@@ -29,7 +29,7 @@ An application for capturing product images, removing backgrounds, generating ro
 
 1. **Clone the repository:**
    ```bash
-   git clone <your_repo_url>
+   git clone https://github.com/Yissuh/image-search-engine.git
    cd imagesearch
    ```
 
