@@ -1,73 +1,132 @@
-# SigLIP-Based Image Similarity Search
+# Product Image Search Application
 
-This repository provides tools for indexing and searching product images using Google's SigLIP (Sigmoid Loss for Language Image Pre-Training) model embeddings. The system creates a searchable FAISS index of rotated product images and enables fast similarity searches.
+An application for capturing product images, removing backgrounds, generating rotated variants, and indexing them for fast similarity search using Google's SigLIP model and FAISS.
 
-## Components
+---
 
-### 1. `dataset_indexer.py`
+## Table of Contents
+- [Features](#features)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+  - [1. Launching the GUI](#1-launching-the-gui)
+  - [2. Product Image Capture](#2-product-image-capture)
+  - [3. Dataset Indexing](#3-dataset-indexing)
+- [Workflow Overview](#workflow-overview)
+- [Troubleshooting](#troubleshooting)
+- [Requirements](#requirements)
+- [Credits](#credits)
 
-Indexes rotated product images from a directory structure by:
-- Loading images from product folders
-- Computing embeddings using SigLIP
-- Creating a FAISS index for fast similarity searches
-- Storing metadata (file paths, product names, rotation angles)
+---
 
-### 2. `image_searcher.py`
+## Features
+- **Product Capture**: Take product photos via webcam, automatically remove backgrounds, and generate rotated versions (every 45°).
+- **Dataset Indexer**: Indexes all captured images using the SigLIP model, creating a searchable FAISS index for similarity search.
+- **Modern GUI**: Easy-to-use PyQt6 interface for product capture and dataset management.
 
-Provides a reusable class for querying the index:
-- Loads pre-trained SigLIP model and FAISS index
-- Processes input images to generate compatible embeddings
-- Performs similarity searches to find matching products
+---
 
-### 3. `frame_searcher.py`
+## Installation
 
-Demo script showing how to use the system:
-- Loads an example product image
-- Searches for similar products in the index
-- Displays top matches with similarity scores
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Yissuh/image-search-engine.git
+   cd imagesearch
+   ```
 
-## Usage
+2. **Create and activate a virtual environment (optional but recommended):**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
-### Indexing a Dataset
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Ensure you have Python 3.8 or later.
 
-```python
-from dataset_indexer import RotatedImageIndexer
+---
 
-indexer = RotatedImageIndexer(dataset_dir="./dataset")
-indexer.index_images()
+## Getting Started
+
+### 1. Launching the GUI
+Run the main application:
+```bash
+python gui_app.py
 ```
+This opens the Product Image Search System GUI.
 
-### Searching for Similar Images
+### 2. Product Image Capture
+- Go to the **Product Capture** tab.
+- Enter the product name, flavor, and barcode.
+- Select the camera (usually 0 for default webcam).
+- Click **Test Camera** to check the feed.
+- Click **Capture & Process**:
+  - Captures the image from the camera.
+  - Removes the background.
+  - Saves rotated versions (0°, 45°, ..., 315°) in `dataset/ProductName_Flavor_Barcode/`.
 
-```python
-from image_searcher import ImageSearcher
-import cv2
+### 3. Dataset Indexing
+- Switch to the **Dataset Indexer** tab.
+- Browse and select your `dataset` directory.
+- Click **Run Indexer**:
+  - All images are processed with the SigLIP model.
+  - A FAISS index and metadata file are created for fast similarity search.
 
-# Initialize searcher with paths to your index files
-searcher = ImageSearcher(
-    index_path="models/siglip2b-16-256-rotated.index",
-    meta_path="models/siglip2b-16-256-rotated-metadata.pkl"
-)
+---
 
-# Load an image and search
-frame = cv2.imread("query_image.jpg")
-results = searcher.search(frame, top_k=5)
+## Workflow Overview
+1. **Capture Product Images:**
+   - Use the GUI to capture and process product images with background removal and rotation.
+2. **Index the Dataset:**
+   - Use the GUI or run `dataset_indexer.py` directly to build the search index:
+     ```bash
+     python dataset_indexer.py
+     ```
+   - This creates index files (e.g., `siglip2b-16-256-flavor.index`, `siglip2b-16-256-flavor.pkl`).
+3. **Search for Images:**
+   - Use the provided search scripts (e.g., `image_searcher.py`) to find similar products by image.
 
-# Display results
-for i, (metadata, score) in enumerate(results, 1):
-    print(f"{i}. Product: {metadata['product']}, Rotation: {metadata['rotation']}, Score: {score}")
-```
+---
+
+## Troubleshooting
+- **Camera Not Detected:**
+  - Ensure your webcam is connected and not used by another application.
+  - Try changing the camera index (0, 1, 2).
+- **Missing Dependencies:**
+  - Double-check your Python environment and install all packages from `requirements.txt`.
+- **CUDA/CPU Issues:**
+  - The application will use GPU if available; otherwise, it defaults to CPU.
+- **Background Removal Fails:**
+  - Ensure `rembg` and its dependencies are installed.
+
+---
 
 ## Requirements
-
-- PyTorch
-- FAISS
-- Transformers (Hugging Face)
+- Python 3.8+
+- PyQt6
 - OpenCV
 - Pillow
+- rembg
+- torch
+- transformers
+- faiss-cpu
+- numpy
+- onnxruntime (only if using ONNX models)
 
-## Notes
+Install all requirements with:
+```bash
+pip install -r requirements.txt
+```
 
-- The system uses Google's SigLIP2-base-patch16-256 model for high-quality image embeddings
-- Cosine similarity is used for comparing embeddings (via FAISS IndexFlatIP)
-- The indexer handles images at various rotation angles to improve matching robustness
+---
+
+## Credits
+- [Google SigLIP](https://huggingface.co/google/siglip2-base-patch16-256)
+- [FAISS](https://github.com/facebookresearch/faiss)
+- [rembg](https://github.com/danielgatis/rembg)
+- [PyQt6](https://www.riverbankcomputing.com/software/pyqt/)
+
+---
+
+For more details, see the source files: `gui_app.py`, `dataset_indexer.py`, and `requirements.txt`.
